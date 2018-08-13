@@ -1,0 +1,195 @@
+---
+title: "Analytical Paleobiology Workshop 2018"
+subtitle: "Creating World Clouds in R" 
+author: "Michal Kowalewski"
+date: "July 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE)
+```
+
+## Creating World Clouds in R
+
+It is relatively easy to create a customized world cloud in R using the package 'worldcloud'.
+
+Start by installing and then uploading relevant libraries. The uploaded packages will also include other libraries ('NLP' and 'RColorBrewer'). 
+
+```{r}
+# install.packages('wordcloud') # enable to upload packages
+# install.packages('tm')      # enable to upload packages
+# install.packages('SnowballC')  # enable to upload packages
+library(tm)
+library(SnowballC)
+library(wordcloud)
+```
+
+
+## Example 1: "Raven" by Poe
+
+As our first example we will use a famous poem by Edgar A. Poe: _The Raven_. Make sure that the file 'RAVEN.txt' is located in your working directory or its path is correctly referenced. We will first upload and preprocess the text by cleaning it using the function 'tm_map'. Examples of several common steps you may consider when cleaning text files are exemplified below.
+
+```{r}
+rav <- readLines('RAVEN.txt')						# upload your text file
+rav2 <- Corpus(VectorSource(rav))					# convert lines of text into lists
+rav2 <- tm_map(rav2, content_transformer(tolower)) 		# convert the text to lower case
+rav2 <- tm_map(rav2, removeWords, stopwords("english")) 	# remove english common stopwords
+rav2 <- tm_map(rav2, removeNumbers) 		   		# remove numbers
+rav2 <- tm_map(rav2, removePunctuation) 				# remove punctuations
+rav2 <- tm_map(rav2, stripWhitespace) 				# eliminate extra white spaces
+```
+
+You can also custom-remove specific words, as long as you make sure to convert all words to lower case format first.
+
+```{r}
+rav2 <- tm_map(rav2, removeWords, c('said', 'upon')) 		# Here, I removed two words
+```
+
+Once you removed the words you believe to be meaningless, unnecessary or otherwise uselss, you can compute frequencies of the words (a critical variable for generating 'WordClouds')
+
+```{r}
+#------------------ COMPUTE FREQUENCIES OF WORDS -----------------
+out1 <- TermDocumentMatrix(rav2)					# reformat into a set of lists
+# out1$dimnames$Terms							# a list of unique words can be accessed
+out2 <- sort(rowSums(as.matrix(out1)),decreasing=TRUE)	# compute frequencies of words
+as.matrix(out2)[1:10,]							# check 10 most common words and their frequencies
+```
+
+Interestingly, it is 'door' (and not 'raven' or 'nevermore') that is the most common word in the poem _Raven_. You can now generate a WorldCloud. First, we will generate one that is mostly based on default settings with limited parameterization.
+
+```{r}
+#------------------ WORD CLOUD USING MOSTLY DEFAULT SETTINGS -----
+# plot wordcloud with limited parameterization (mostly default settings)
+wordcloud(words = names(out2), freq = out2, min.freq = 3,
+          max.words=50, random.order=FALSE, rot.per=0.1, 
+          colors=brewer.pal(8, "Set1"))
+```
+
+Let's now do a more carefully customized WordCloud. First, decide which words to keep based on their frequency. For example...
+
+```{r}
+n <- 2									# say, two occurrences minimum
+wordc <- sum(out2>=n)							# find out how many words occur 2 times minimum
+wordc 									# number of words with at least n occurrences
+```
+
+In this case We retained 107 words.
+
+Now that you know how many words you have, you can define your own colors (for 'The Raven', they should be "dark and dreary"). It may be useful to plot your color gradient firt to check the colors and adjust as needed.
+
+```{r, fig.height = 2}
+mycol.F <- colorRampPalette(c("darkseagreen1", "black"))	# this function creates a function
+mycols <- mycol.F(wordc)						# apply this new function to define number of colors
+mycols
+plot(rep(1,wordc), col=mycols, pch=15, cex=6,
+     axes=F, xlab='', ylab='') 					# check your colors
+```
+
+You are now ready to plot WordCloud for the poem _Raven_
+
+```{r}
+wordcloud(words = names(out2), freq = out2, 
+          max.words=wordc, 						# defines how many words to include
+	    min.freq=n,							# defines minimum frequency
+          scale=c(4,.5), 						# defines range of fonts sizes of words
+          random.order=FALSE, 					# default (prints words in order of their frequency
+	    rot.per=0.5, 							# controls rotation
+	    colors=mycols,						# defines colors of words
+          vfont=c("gothic english", "plain"))			# define font ('gothic english' seems appropriate here)
+```
+
+
+## Example 2: Summarize your own paper as a world cloud
+
+One obvious application of world clouds is to convert your paper or abstract into a world cloud. You can then use it as a cool visuallization of  words frequently used in your own text. Here, I uploaded one of our own papers:
+
+Tyler and Kowalewski 2017, Surrogate taxa and fossils as reliable proxies of spatial biodiversity patterns in marine benthic communities. _Proceedings of the Royal Society B_ __284__: 20162839. http://dx.doi.org/10.1098/rspb.2016.2839PRSB)
+
+This paper is stored in the file 'tyler.text'.
+
+```{r}
+rav <- readLines('tyler.txt')						# upload your text file
+rav2 <- Corpus(VectorSource(rav))					# convert lines of text into lists
+rav2 <- tm_map(rav2, content_transformer(tolower)) 		# convert the text to lower case
+rav2 <- tm_map(rav2, removeWords, stopwords("english")) 	# remove english common stopwords
+rav2 <- tm_map(rav2, removeNumbers) 		   		# remove numbers
+rav2 <- tm_map(rav2, removePunctuation) 				# remove punctuations
+rav2 <- tm_map(rav2, stripWhitespace) 				# eliminate extra white spaces
+rav2 <- tm_map(rav2, removeWords, c('figure', 'datasets')) 	# remove some words
+out1 <- TermDocumentMatrix(rav2)					# reformat into a set of lists
+# out1$dimnames$Terms							# a list of unique words can be accessed
+out2 <- sort(rowSums(as.matrix(out1)),decreasing=TRUE)	# compute frequencies of words
+as.matrix(out2)[1:20,]							# check 20 most common words and their frequencies
+```
+
+Interesting words to notice here are 'consistent' and 'however'. You could, of course, remove those if you want to maximally focus on topical words. However, I will keep those two words in this example. Now we will again customize our colors.
+
+```{r, fig.height=2}
+n <- 7									# 7 occurrences minimum
+wordc <- sum(out2>=n)							# find out how many words occur 2 times minimum
+wordc 									# number of words with at least n occurrences
+mycol.F <- colorRampPalette(c('forestgreen', 'yellow3', 'coral1'))	# this function creates a function
+mycols <- mycol.F(wordc)						# apply this new function to define number of colors
+plot(rep(1,wordc), col=mycols, pch=15, cex=6,
+     axes=F, xlab='', ylab='') 					# check your colors
+```
+
+Now we can generate the worldcloud and use it in your talks, insert it into your posters, or post it on your website.
+
+```{r}
+wordcloud(words = names(out2), freq = out2, 
+          max.words=wordc, 						# defines how many words to include
+	    min.freq=n,							# defines minimum frequency
+          scale=c(4,.5), 						# defines range of fonts sizes of words
+          random.order=FALSE, 					# default (prints words in order of their frequency
+	    rot.per=0.5, 							# controls rotation
+	    colors=mycols,						# defines colors of words
+          vfont=c("sans serif", "plain"))			      # define font
+```
+
+And, of course, as always cite the packages you used (incudinig those loaded in the background).
+
+```{r}
+# you can get references using 'citation' function. Disabled here to prevent excessive printout.
+# citation("tm")
+# citation("SnowballC")
+# citation("wordcloud")
+# citation("slam")
+# citation("RColorBrewer")
+# citation("NLP")
+```
+
+Ingo Feinerer and Kurt Hornik (2018). tm: Text Mining Package. R package version 0.7-4.
+  https://CRAN.R-project.org/package=tm
+
+Ingo Feinerer, Kurt Hornik, and David Meyer (2008). Text Mining Infrastructure in R. Journal of
+  Statistical Software 25(5): 1-54. URL: http://www.jstatsoft.org/v25/i05/.
+
+Milan Bouchet-Valat (2014). SnowballC: Snowball stemmers based on the C libstemmer UTF-8 library.
+  R package version 0.5.1. https://CRAN.R-project.org/package=SnowballC
+
+Ian Fellows (2014). wordcloud: Word Clouds. R package version 2.5.
+  https://CRAN.R-project.org/package=wordcloud
+
+Kurt Hornik, David Meyer and Christian Buchta (2018). slam: Sparse Lightweight Arrays and
+  Matrices. R package version 0.1-43. https://CRAN.R-project.org/package=slam
+
+Erich Neuwirth (2014). RColorBrewer: ColorBrewer Palettes. R package version 1.1-2.
+  https://CRAN.R-project.org/package=RColorBrewer
+
+Kurt Hornik (2017). NLP: Natural Language Processing Infrastructure. R package version 0.1-11.
+  https://CRAN.R-project.org/package=NLP
+  
+__Comments/Questions/Corrections:__ Michal Kowalewski (kowalewski@ufl.edu)
+
+__Peer-review:__ This document has NOT been peer-reviewed.
+
+__Our Sponsors:__
+_National Science Foundation (Sedimentary Geology and Paleobiology Program)_, _National Science Foundation (Earth Rates Initiative)_, _Paleontological Society_, _Society of Vertebrate Paleontology_
+ 
+ 
+![ ](SponsorsLogoAPW.png)
+ 
+ 
+<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
