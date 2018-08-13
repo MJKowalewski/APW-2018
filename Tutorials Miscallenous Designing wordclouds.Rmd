@@ -78,7 +78,7 @@ In this case We retained 107 words.
 
 Now that you know how many words you have, you can define your own colors (for 'The Raven', they should be "dark and dreary"). It may be useful to plot your color gradient firt to check the colors and adjust as needed.
 
-```{r, fig.height = 2}
+```{r}
 mycol.F <- colorRampPalette(c("darkseagreen1", "black"))	# this function creates a function
 mycols <- mycol.F(wordc)						# apply this new function to define number of colors
 mycols
@@ -125,7 +125,7 @@ as.matrix(out2)[1:20,]							# check 20 most common words and their frequencies
 
 Interesting words to notice here are 'consistent' and 'however'. You could, of course, remove those if you want to maximally focus on topical words. However, I will keep those two words in this example. Now we will again customize our colors.
 
-```{r, fig.height=2}
+```{r}
 n <- 7									# 7 occurrences minimum
 wordc <- sum(out2>=n)							# find out how many words occur 2 times minimum
 wordc 									# number of words with at least n occurrences
@@ -140,15 +140,15 @@ Now we can generate the worldcloud and use it in your talks, insert it into your
 ```{r}
 wordcloud(words = names(out2), freq = out2, 
           max.words=wordc, 						# defines how many words to include
-	    min.freq=n,							# defines minimum frequency
+	        min.freq=n,							# defines minimum frequency
           scale=c(4,.5), 						# defines range of fonts sizes of words
           random.order=FALSE, 					# default (prints words in order of their frequency
-	    rot.per=0.5, 							# controls rotation
-	    colors=mycols,						# defines colors of words
+	        rot.per=0.5, 							# controls rotation
+	        colors=mycols,						# defines colors of words
           vfont=c("sans serif", "plain"))			      # define font
 ```
 
-And, of course, as always cite the packages you used (incudinig those loaded in the background).
+And, of course, as always cite the packages you used (including those loaded in the background).
 
 ```{r}
 # you can get references using 'citation' function. Disabled here to prevent excessive printout.
